@@ -1,0 +1,48 @@
+body, html {
+    height: 100%; /* Full height */
+    margin: 0; /* Remove default margin */
+    font-family: Arial, sans-serif; /* Optional: Sets the font style */
+}
+
+#homepage, #post-form, #full-post {
+    width: 80%; /* Adjusts the width of the form to 80% of its container */
+    max-width: 600px; /* Maximum width */
+    padding: 20px; /* Padding inside the divs */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Optional: Adds shadow for better visibility */
+    border: 1px solid #ccc; /* Optional: Adds a border */
+    background-color: white; /* Background color */
+    margin: auto; /* Centers the divs */
+}
+
+.list-group-item {
+    background-color: #f8f9fa; /* Light grey background */
+    border: 1px solid #ddd; /* Grey border */
+    padding: 10px 20px; /* Padding inside items */
+    margin-top: 8px; /* Space between items */
+}
+
+.form-control {
+    width: 100%; /* Full width of its parent */
+    padding: 10px; /* Padding inside input */
+    margin: 6px 0; /* Margin top and bottom */
+    display: inline-block;
+    border: 1px solid #ccc; /* Border color */
+    box-sizing: border-box; /* Border box sizing */
+}
+
+.btn-primary {
+    background-color: #007bff; /* Blue background */
+    color: white; /* Text color */
+    padding: 12px 20px; /* Padding inside button */
+    border: none; /* No border */
+    cursor: pointer; /* Cursor pointer */
+    width: 100%; /* Full width */
+}
+
+.btn-primary:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
+label {
+    font-weight: bold; /* Makes labels bold */
+}

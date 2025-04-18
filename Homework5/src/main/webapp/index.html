@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hello World</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+          crossorigin="anonymous">
+</head>
+<body>
+
+    <div id="homepage">
+        <!-- List of posts -->
+        <ul class = "list-group" id="posts-container">
+
+        </ul>
+    </div>
+
+    <!-- New post form -->
+    <div id="post-form" style="display:none;">
+        <form>
+            <div class="mb-3">
+                <label for="author" class="form-label">Author</label>
+                <input type="email" class="form-control" id="author" placeholder="Author">
+            </div>
+            <div class="mb-3">
+                <label for="title" class="form-label">Title</label>
+                <input type="email" class="form-control" id="title" placeholder="Title">
+            </div>
+            <div class="mb-3">
+                <label for="content" class="form-label">Content</label>
+                <textarea class="form-control" id="content" placeholder="Content"></textarea>
+            </div>
+            <button type="button" onclick="submitNewPost()" class="btn btn-primary">Submit Post</button>
+        </form>
+    </div>
+
+    <div id="full-post">
+
+    </div>
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/api/posts', {
+            method: 'GET'
+        }).then(response => {
+            return response.json();
+        }).then(posts => {
+            const postsContainer = document.getElementById('posts-container');
+            for (const post of posts) {
+                displayPost(postsContainer, post);
+            }
+
+            const newPostButton = document.createElement('button');
+            newPostButton.textContent = 'New Post';
+            newPostButton.className = 'btn btn-primary';
+            newPostButton.style.marginTop = '10px';
+            postsContainer.after(newPostButton);
+
+            newPostButton.addEventListener('click', showForm);
+        })
+    })
+
+    function displayPost(postsContainer, post) {
+        const listItem = document.createElement('li');
+        listItem.className = 'list-group-item';
+
+        const author = document.createElement('p');
+        author.textContent = `Author: ${post.author}`;
+        listItem.appendChild(author);
+
+        const title = document.createElement('h5');
+        title.textContent = `Title: ${post.title}`;
+        listItem.appendChild(title);
+
+        const content = document.createElement('p');
+        if (post.content.length > 100) {
+            content.textContent = `Content: ${post.content.substring(0, 100)}...`;
+            const moreLink = document.createElement('a');
+            moreLink.textContent = 'More';
+            moreLink.href = '#';
+            moreLink.style.color = 'blue';
+            moreLink.style.textDecoration = 'underline';
+            moreLink.onclick = function(event) {
+                event.preventDefault();
+                showFullPost(post);
+
+            };
+            content.appendChild(moreLink);
+        } else {
+            content.textContent = `Content: ${post.content}`;
+        }
+        listItem.appendChild(content);
+
+        const currentDate = new Date();
+        const postDate = new Date(post.date);
+        const timeDiff = Math.abs(currentDate.getTime() - postDate.getTime());
+        const diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+        const date = document.createElement('p');
+        if (diffDays === 0) {
+            date.textContent = 'Date: Today';
+        } else if (diffDays === 1) {
+            date.textContent = 'Date: 1 day ago';
+        } else {
+            date.textContent = `Date: ${diffDays} days ago`;
+        }
+        listItem.appendChild(date);
+
+        postsContainer.appendChild(listItem);
+    }
+
+    function showFullPost(post){
+        const homepageDiv = document.getElementById('homepage');
+        homepageDiv.style.display = 'none';
+
+        // Show the 'full-post' div
+        const fullPostDiv = document.getElementById('full-post');
+        fullPostDiv.style.display = '';
+
+        // Clear the 'full-post' div
+        fullPostDiv.innerHTML = '';
+
+        // Display the post details
+        const title = document.createElement('h2');
+        title.textContent = post.title;
+        fullPostDiv.appendChild(title);
+
+        const author = document.createElement('p');
+        author.textContent = `Author: ${post.author}`;
+        fullPostDiv.appendChild(author);
+
+        const content = document.createElement('p');
+        content.textContent = `Content: ${post.content}`;
+        fullPostDiv.appendChild(content);
+
+        const date = document.createElement('p');
+        date.textContent = `Date: ${new Date(post.date).toDateString()}`;
+        fullPostDiv.appendChild(date);
+
+        // Fetch and display the comments
+        fetch(`/api/posts/${post.id}/comments`, {
+            method: 'GET'
+        }).then(response => {
+            return response.json();
+        }).then(comments => {
+            const commentsTitle = document.createElement('h3');
+            commentsTitle.textContent = 'Comments';
+            fullPostDiv.appendChild(commentsTitle);
+
+            const commentsList = document.createElement('ul');
+            commentsList.className = 'list-group';
+            for (const comment of comments) {
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item';
+
+                const author = document.createElement('strong');
+                author.textContent = comment.author;
+                listItem.appendChild(author);
+
+                const content = document.createElement('p');
+                content.textContent = comment.content;
+                listItem.appendChild(content);
+
+                commentsList.appendChild(listItem);
+            }
+            fullPostDiv.appendChild(commentsList);
+
+            // Comment form
+            const commentForm = document.createElement('form');
+            commentForm.innerHTML = `
+            <div class="mb-3">
+                <label for="comment-author" class="form-label">Author</label>
+                <input type="text" class="form-control" id="comment-author" placeholder="Author">
+            </div>
+            <div class="mb-3">
+                <label for="comment-content" class="form-label">Content</label>
+                <textarea class="form-control" id="comment-content" placeholder="Content"></textarea>
+            </div>
+            <button type="button" onclick="submitNewComment(${post.id})" class="btn btn-primary">Comment</button>
+        `;
+            fullPostDiv.appendChild(commentForm);
+        });
+    }
+
+    function submitNewComment(postId) {
+        // Retrieve the values from the form fields
+        const author = document.getElementById('comment-author').value;
+        const content = document.getElementById('comment-content').value;
+
+        // Create a new comment object
+        const newComment = {
+            author: author,
+            content: content
+        }
+
+        // Send a POST request to the server
+        fetch(`http://localhost:8080/api/posts/${postId}/comment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newComment)
+        })
+        .then(response => response.json())
+        .then(comment =>{
+            showHomepage();
+        })
+        .catch(error => console.error('Error:', error));
+
+    }
+
+    function showForm() {
+        const postFormDiv = document.getElementById('post-form');
+        postFormDiv.style.display = '';
+
+        const homepageDiv = document.getElementById('homepage');
+        homepageDiv.style.display = 'none';
+
+        const fullPostDiv = document.getElementById('full-post');
+        fullPostDiv.style.display = 'none';
+    }
+
+    function showHomepage() {
+        const postFormDiv = document.getElementById('post-form');
+        postFormDiv.style.display = 'none';
+
+        const homepageDiv = document.getElementById('homepage');
+        homepageDiv.style.display = '';
+
+        const fullPostDiv = document.getElementById('full-post');
+        fullPostDiv.style.display = 'none';
+    }
+
+
+    function submitNewPost() {
+        // Retrieve the values from the form fields
+        const author = document.getElementById('author').value;
+        const title = document.getElementById('title').value;
+        const content = document.getElementById('content').value;
+
+        // Create a new post object
+        const newPost = {
+            author: author,
+            title: title,
+            content: content
+        };
+
+        // Send a POST request to the server
+        fetch('http://localhost:8080/api/posts/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newPost)
+        })
+        .then(response => response.json())
+        .then(post => {
+            // Hide the 'post-form' div
+            showHomepage();
+
+            // Update the list of posts
+            const postsContainer = document.getElementById('posts-container');
+            displayPost(postsContainer, post);
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+</script>
+<style>
+        body, html {
+            height: 100%; /* Full height */
+            margin: 0; /* Remove default margin */
+            font-family: Arial, sans-serif; /* Optional: Sets the font style */
+        }
+
+        #homepage, #post-form, #full-post {
+            width: 80%; /* Adjusts the width of the form to 80% of its container */
+            max-width: 600px; /* Maximum width */
+            padding: 20px; /* Padding inside the divs */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Optional: Adds shadow for better visibility */
+            border: 1px solid #ccc; /* Optional: Adds a border */
+            background-color: white; /* Background color */
+            margin: auto; /* Centers the divs */
+        }
+
+        .list-group-item {
+            background-color: #f8f9fa; /* Light grey background */
+            border: 1px solid #ddd; /* Grey border */
+            padding: 10px 20px; /* Padding inside items */
+            margin-top: 8px; /* Space between items */
+        }
+
+        .form-control {
+            width: 100%; /* Full width of its parent */
+            padding: 10px; /* Padding inside input */
+            margin: 6px 0; /* Margin top and bottom */
+            display: inline-block;
+            border: 1px solid #ccc; /* Border color */
+            box-sizing: border-box; /* Border box sizing */
+        }
+
+        .btn-primary {
+            background-color: #007bff; /* Blue background */
+            color: white; /* Text color */
+            padding: 12px 20px; /* Padding inside button */
+            border: none; /* No border */
+            cursor: pointer; /* Cursor pointer */
+            width: 30%; /* Full width */
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+
+        label {
+            font-weight: bold; /* Makes labels bold */
+        }
+</style>
+</body>
+</html>
+
